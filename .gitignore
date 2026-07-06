@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Data / model artifacts (regenerated, too big for git)
+data/*.jsonl
+data/*.pt
+results/**/checkpoint-*/
+results/**/policy/
+results/**/rm/
+*.safetensors
+
+# HF / caches
+.cache/
+wandb/
+
+# Notebooks: keep source, strip outputs before commit
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
