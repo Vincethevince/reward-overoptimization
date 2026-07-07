@@ -16,7 +16,7 @@ SYSTEM_PROMPT = (
 
 def extract_pred(text:str) -> str | None:
     """The model's final numeric answer from generated text"""
-    match = re.search(r"####\s*(-?d+(?:\.\d+)?)", text)
+    match = re.search(r"####\s*(-?\d+(?:\.\d+)?)", text)
     if match:
         return match.group(1).strip()
     numbers = re.findall(r"-?\d+(?:\.\d+)?", text)
@@ -28,7 +28,7 @@ def extract_gold(answer_field:str) -> str:
 
 def is_correct(completion:str, gold:str) -> bool:
     """Gold exact-match label: does the completion's answer equal the truth?""" 
-    return extract_pred(completion) == gold
+    return extract_pred(completion).replace(",","") == gold
 
 def format_prompt(question:str, tokenizer) -> str:
     messages = [
