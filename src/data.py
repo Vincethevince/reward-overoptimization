@@ -28,7 +28,8 @@ def extract_gold(answer_field:str) -> str:
 
 def is_correct(completion:str, gold:str) -> bool:
     """Gold exact-match label: does the completion's answer equal the truth?""" 
-    return extract_pred(completion).replace(",","") == gold
+    pred = extract_pred(completion)
+    return pred is not None and pred == gold
 
 def format_prompt(question:str, tokenizer) -> str:
     messages = [
