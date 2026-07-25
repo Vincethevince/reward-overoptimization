@@ -68,12 +68,12 @@ def evaluate(model, tokenizer, rows, device, batch_size, max_length) -> dict:
     logits = score(model, tokenizer, [r["text"] for r in rows], device, 
                    batch_size=batch_size, max_length=max_length)
 
-    labels = torch.Tensor([float(r["correct"] for r in rows)])
+    labels = torch.Tensor([float(r["correct"]) for r in rows])
     pred = (logits > 0).float()
     pos, neg = labels == 1, labels == 0
 
     tpr = pred[pos].mean().item()
-    tnr = (1.0 - pred[neg]).mean().item(0)
+    tnr = (1.0 - pred[neg]).mean().item()
     pos_rate = labels.mean().item()
 
     return {
