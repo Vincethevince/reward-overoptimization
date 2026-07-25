@@ -1,0 +1,26 @@
+# Real-run hyperparameters for the proxy reward model (src/train_rm.py).
+#
+# The notebook (notebooks/rm_train.ipynb) loads this and expands every key into
+# a --flag; 
+
+pool: data/rm_pool.jsonl
+model: Qwen/Qwen2.5-0.5B-Instruct   # same Instruct checkpoint the policy starts from
+
+train_questions: 400
+eval_questions: 400
+
+epochs: 2
+batch_size: 8
+eval_batch_size: 16
+
+lr: 0.00001           # 1e-5
+weight_decay: 0.0
+warmup_ratio: 0.1     # linear warmup then linear decay to 0
+max_grad_norm: 1.0
+max_length: 768       # > pool max (738 tok) so the trailing '#### <n>' never truncates
+
+pos_weight: null
+
+dtype: bfloat16
+out_dir: results/rm_v1
+seed: 0
