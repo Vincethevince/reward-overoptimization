@@ -1,0 +1,48 @@
+{
+  "args": {
+    "pool": "data/rm_pool.jsonl",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "train_questions": 400,
+    "eval_questions": 400,
+    "epochs": 2,
+    "batch_size": 4,
+    "eval_batch_size": 16,
+    "lr": 1e-05,
+    "weight_decay": 0.0,
+    "warmup_ratio": 0.1,
+    "max_grad_norm": 1.0,
+    "max_length": 768,
+    "pos_weight": null,
+    "dtype": "bfloat16",
+    "out_dir": "results/rm_v1",
+    "seed": 0
+  },
+  "history": [
+    {
+      "acc": 0.7515624761581421,
+      "majority_baseline": 0.6606250107288361,
+      "auroc": 0.8407281283593896,
+      "balanced_acc": 0.6539037972688675,
+      "tpr": 0.34990790486335754,
+      "tnr": 0.9578996896743774,
+      "pos_rate": 0.33937498927116394,
+      "mean_logit_pos": -1.3468108177185059,
+      "mean_logit_neg": -5.737463474273682,
+      "epoch": 0,
+      "train_loss": 0.7464755923730263
+    },
+    {
+      "acc": 0.8140624761581421,
+      "majority_baseline": 0.6606250107288361,
+      "auroc": 0.8745513554292963,
+      "balanced_acc": 0.7829261422157288,
+      "tpr": 0.6860036849975586,
+      "tnr": 0.8798485994338989,
+      "pos_rate": 0.33937498927116394,
+      "mean_logit_pos": 1.6256756782531738,
+      "mean_logit_neg": -5.35738468170166,
+      "epoch": 1,
+      "train_loss": 0.5039246275815367
+    }
+  ]
+}
