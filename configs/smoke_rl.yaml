@@ -1,0 +1,35 @@
+# Smoke test for the RL path. Run this on the SAME GPU before the real run -
+# the proxy arm holds three 0.5B models (policy + frozen ref + RM) plus the
+# generation KV cache, and 500 steps is ~8.5h of A100 time to waste on a
+# TypeError at step 1.
+
+# Run both arms:
+#   python -m src.train_rl --config configs/smoke_rl.yaml --arm proxy
+#   python -m src.train_rl --config configs/smoke_rl.yaml --arm gold
+
+model: Qwen/Qwen2.5-0.5B-Instruct
+dataset: openai/gsm8k
+split: train[:8]
+
+rm_path: results/rm_v1/rm
+rm_batch_size: 4
+rm_max_length: 768
+
+# GRPO core - tiny
+num_generations: 2
+temperature: 1.0
+top_p: 0.95
+
+# Training - tiny
+learning_rate: 1.0e-5
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 1
+max_steps: 2
+max_prompt_length: 128
+max_completion_length: 32
+save_steps: 1000          # above max_steps: no checkpoint written
+seed: 42
+
+beta: 0.04
+
+logging_steps: 1

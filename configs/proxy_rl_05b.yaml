@@ -1,0 +1,45 @@
+# Phase-1 go/no-go, PROXY arm: policy optimizes the RM's logit.
+#
+# Every hyperparameter matches grpo-qwen0.5/configs/baseline.yaml, so that run
+# (gold acc 0.446 -> 0.484, plateau from step 200) is a free reference curve.
+# The ONLY difference is the reward. If gold_acc here rises and then turns over
+# while reward_mean keeps climbing, that is the go signal.
+
+model: Qwen/Qwen2.5-0.5B-Instruct
+dataset: openai/gsm8k
+split: train
+
+# Proxy reward: the Phase-1 RM (held-out AUROC 0.875, acc 0.814).
+# Gitignored, so on Colab this points into Drive.
+rm_path: results/rm_v1/rm
+rm_batch_size: 8      # deliberately conservative: the baseline already peaked
+                      # at ~34GB of 40GB with two models, and this arm adds a
+                      # third. Generation dominates step time (~51s), so RM
+                      # scoring batch is nearly free to shrink.
+rm_max_length: 768    # = max_prompt_length 256 + max_completion_length 512, so
+                      # nothing truncates. Raise with them if either grows, or
+                      # the trailing '#### <n>' gets cut and the reward degrades.
+
+# GRPO core
+num_generations: 8        # group size G - FIXED across every arm and seed
+temperature: 1.0
+top_p: 0.95
+
+# Training
+learning_rate: 5.0e-6
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 4
+max_steps: 500
+max_prompt_length: 256
+max_completion_length: 512
+save_steps: 100
+seed: 42
+
+# KL penalty. 0.04 matches the baseline, where it was measured NOT to bind
+# (KL grew 0.004 -> 0.014 over 500 steps, far below where the penalty pushes
+# back). Kept for comparability; the RQ3 sweep has to go UP from here for beta
+# to become a real lever.
+beta: 0.04
+
+# Logging
+logging_steps: 10
