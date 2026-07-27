@@ -1,0 +1,36 @@
+{
+    "arm": "proxy",
+    "config": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "dataset": "openai/gsm8k",
+        "split": "train",
+        "rm_path": "results/rm_v1/rm",
+        "rm_batch_size": 8,
+        "rm_max_length": 768,
+        "num_generations": 8,
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "learning_rate": 5e-06,
+        "per_device_train_batch_size": 1,
+        "gradient_accumulation_steps": 4,
+        "max_steps": 500,
+        "max_prompt_length": 256,
+        "max_completion_length": 512,
+        "save_steps": 100,
+        "seed": 42,
+        "beta": 0.04,
+        "logging_steps": 10
+    },
+    "final_metrics": {
+        "loss": 0.0016089528799057007,
+        "reward_mean": 4.724609375,
+        "reward_std": 3.899580240249634,
+        "gold_acc": 0.75,
+        "zero_adv_fraction": 0.0,
+        "mean_completion_len": 263.25,
+        "kl": 0.04023319110274315,
+        "ratio": 1.0
+    },
+    "duration_sec": 23226.434555,
+    "timestamp": "2026-07-26T14:39:38.004242"
+}
