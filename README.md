@@ -29,12 +29,49 @@ The proxy RM is a **head-swap correctness classifier**: `AutoModelForSequenceCla
 
 | Phase | Deliverable | Status |
 |---|---|---|
-| 1 | Proxy RM + reward plumbing + one 0.5B proxy-RL seed → confirm the Goodhart turn (go/no-go) | **In progress** |
+| 1 | Proxy RM + reward plumbing + one 0.5B proxy-RL seed → confirm the Goodhart turn (go/no-go) | **Complete** - turn confirmed + hack characterized (See Phase 1 findings) |
 | 2 | proxy-RL 1.5B ×3 seeds + gold-RL control → headline figure with error bars | Planned — *minimum shippable* |
 | 3 | Generalization probe on all arms (SVAMP / MATH) | Planned |
 | 4 | KL-strength sweep and/or 3B scale point | Planned |
 
 Phase 1 so far: GSM8K data utils, RM data-generation pipeline (16k base-checkpoint rollouts, gold-labeled), and the head-swap RM module are in place. Training + held-out RM eval next.
+
+## Phase 1 findings
+RL against the imperfect RM produces the Goodhart turn at 0.5B size - and the hack has a concrete shape: **the policy learns a confident-looking "costume" and wears it over wrong, short answers.**
+![The RM'S within-question discrimination decays to chance as the policy learns a confident-looking wrong-answer costume](results/probe/headline.png)
+
+**RQ1 - the turn is real.** Proxy reward climbs monotonically (-1.3 -> +3.8 over 500 steps, no plateau) while gold accuracy rises, peaks near step 200, then declines (gold acc 0.443 -> 0.562 -> 0.471). 500 steps of RL brought ~5 logits of proxy reward and nothing on the true objective. A second, independent over-optimization signature: KL from the reference grew ~5x further than the gold-RL baseline (0.014 -> 0.068 nats/token) for a worse outcome.
+
+**The mechanism - stylistic hacking.** Probing checkpoints (base, step-200, step-500) on 200 held-out test questions x 4 samples reveals the over-rated wrong completions are uniform: a `"To determine X, we need to follow these steps: 1.. 2.. 3.."` opener, display-math `\[... \]` and a confident `\boxed{answer}`- while the arithmetic is wrong. The policy drives these confidence markers to near-universal and completions get shorter:
+
+| policy | gold acc | mean len | `\boxed` | `"To determine…"` | display-math |
+|---|---:|---:|---:|---:|---:|
+| base | 31.8% | 333 | 73% | 82% | 90% |
+| step-200 | 37.9% | 255 | 98% | 98% | 95% |
+| step-500 | 35.0% | 238 | 98% | 99.5% | 93% |
+
+The base Instruct model already writes LaTeX (display-math is a at ~90%), so the policy did not invent structure - it amplified the *confidence signals* (`\boxed` and the step-opener). And the RM demonstrably pays for the costume independent of correctness: among **gold-wrong** completions, ones wearing the costume score +1.6 to +3.2 nats higher than plain ones at every checkpoint.
+
+**What over-optimization looks like in the reward, quantified:** Because the proxy reward is a continuous logit, *every* GRPO group carries gradient - even all-right or all-wrong groups have non-zero within-group advantages (the proxy's arm zero-advantage fraction is 0% vs ~30% for the binary gold reward). A group can only trade *correctness* for style when it contains both a right and a wrong sample; there, the telling question is whether the RM still ranks the right sample above the wrong one. It increasingly does not:
+
+| metric | base | step-200 | step-500 |
+|---|---:|---:|---:|
+| **within-question RM AUROC** (right vs wrong, same question; chance = 0.5) | 0.787 | 0.655 | **0.578** |
+| pooled RM AUROC on-policy | 0.890 | 0.837 | 0.813 |
+| mean RM logit on **wrong** completions | -5.30 | -1.52 | **+0.28** |
+| gold-wrong yet RM logit > 0 (`conf_wrong`) | 8.6% | 25.5% | **38.0%** |
+| RM ranks a wrong sample #1 in a mixed group | 27.7% | 41.8% | 59.7% |
+| - same, vs. a random ranker (base-rate) | 50.5% | 56.0% | 57.1% |
+| - **lift over random** | **-22.9pp** | -14.2pp | **+2.6pp** |
+
+The headline is the first row: **within a question, the RM's ability to rank a correct answer above an incorrect one decays from 0.79 toward chance (0.58).** The pooled AUROC barely moves (0.89 -> 0.81) - but that number is inflated by easy-vs-hard question separation, which GRPO's within-group ranking never sees. On the comparison the optimizer actually makes, discrimination nearly collapses.
+
+The last three rows guard against a base-rate trap: with pos-rate ~0.35 and G=4, a mixed group holds more wrong than right samples, so even a random ranker tops-out on a wrong sample ~50-57% of the time. Measured against that baseline, the RM crosses from **23 points better than random** (it surfaces right answers) to **2.6 points worse than random** by step 500. The mean logit on wrong answers, meanwhile, crosses the RM's own decision boundary (-5.3 -> +0.3): over-optimization here is a distribution shift across the boundary, not a wholesale loss of discrimination. 
+
+**RQ2 - early signal.** Every measurement above is on the `test`split, which the polixy never trained on, yet the costume is fully present. The bad habit generalizes to held-out questions - a preview of the dedicated SVAMP / MATH probe.
+
+**Caveats** Single seed at 0.5B (error bars come in Phase 2). The mixed-group denominator shrinks as the policy homogenizes (94 -> 77 questions), to the top-1-wrong rates are over a drifting base. The probe samples G=4 vs G=8 at training time. The trend holds but levels are not directly comparable. `checkpoint-500` was never written - the final `policy/` is the step-500 model.
+
 
 ## Setup
 
